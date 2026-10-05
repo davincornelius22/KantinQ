@@ -1,0 +1,15 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: kantinq-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-kantinq}
+    ports:
+      - "3306:3306"
+    volumes:
+      - kantinq_mysql_data:/var/lib/mysql
+
+volumes:
+  kantinq_mysql_data:
