@@ -362,54 +362,93 @@ Pastikan sudah tersedia:
 * Docker
 * Docker Compose
 
-## 1. Clone Repository
+## 1. Clone Repository & Masuk ke Folder
 
 ```bash
-git clone <URL_REPOSITORY>
 cd kantinq
 ```
 
-## 2. Install Dependency
+## 2. Install Dependency (npm workspaces)
+
+Jalankan perintah ini di root folder untuk menginstall dependensi `@kantinq/shared`, `apps/api`, dan `apps/web`:
 
 ```bash
 npm install
 ```
 
-## 3. Siapkan Environment
+## 3. Siapkan Environment Variable
 
-Salin file `.env.example` menjadi `.env`.
+Salin file `.env.example` menjadi `.env` di root project dan di `apps/api`:
 
-Contoh konfigurasi:
-
-```env
-DATABASE_URL="mysql://root:root@localhost:3306/kantinq"
+```bash
+cp .env.example .env
+cp .env.example apps/api/.env
 ```
 
-## 4. Jalankan MySQL
+Isi default pada `.env`:
+```env
+PORT=3001
+DATABASE_URL="mysql://root:root@localhost:3306/kantinq"
+VITE_API_URL="http://localhost:3001"
+WEB_URL="http://localhost:5173"
+```
+
+## 4. Jalankan Database MySQL (Docker Compose)
+
+Pastikan Docker Desktop aktif, lalu jalankan:
 
 ```bash
 docker compose up -d
 ```
 
-## 5. Jalankan Prisma Migration
-
+Untuk memverifikasi container MySQL berjalan:
 ```bash
-npm run db:migrate
+docker compose ps
 ```
 
-## 6. Jalankan Seed
+## 5. Sinkronisasi Skema Database & Prisma Client
+
+Jalankan perintah generate dan push/migrate skema:
+
+```bash
+npm run db:generate
+npm run db:push
+# atau menggunakan migration:
+# npm run db:migrate
+```
+
+## 6. Jalankan Seed Data (Data Awal Kantin, Menu & Pesanan)
+
+Isi database dengan data kantin Mbok Darmi, menu makanan & minuman, serta contoh antrean:
 
 ```bash
 npm run db:seed
 ```
 
-## 7. Jalankan Aplikasi
+## 7. Jalankan Frontend dan Backend Secara Bersamaan
+
+Cukup jalankan satu perintah dari root project:
 
 ```bash
 npm run dev
 ```
 
-Frontend dan backend kemudian dapat diakses melalui alamat yang ditampilkan oleh project.
+Atau jalankan masing-masing di terminal terpisah jika diinginkan:
+- **Terminal 1 (Backend API):**
+  ```bash
+  npm run dev:api
+  ```
+  API aktif di: `http://localhost:3001` (Health check: `http://localhost:3001/api/health`)
+
+- **Terminal 2 (Frontend Web):**
+  ```bash
+  npm run dev:web
+  ```
+  Web UI aktif di: `http://localhost:5173`
+
+> **Catatan Demo / Offline:**  
+> Aplikasi dilengkapi mekanisme fallback state terintegrasi. Jika MySQL belum dinyalakan, backend dan frontend tetap dapat dibuka di browser tanpa error dan siap digunakan untuk demonstrasi antarmuka dan alur pemesanan.
+
 
 ---
 

@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  WAITING
+  PROCESSING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+model Canteen {
+  Id          Int        @id @default(autoincrement())
+  Name        String
+  Location    String
+  Description String?    @db.Text
+  IsActive    Boolean    @default(true)
+  CreatedAt   DateTime   @default(now())
+  MenuItems   MenuItem[]
+  Orders      Order[]
+
+  @@map("canteens")
+}
+
+model MenuItem {
+  Id          Int         @id @default(autoincrement())
+  CanteenId   Int
+  Name        String
+  Description String?     @db.Text
+  Price       Int
+  IsAvailable Boolean     @default(true)
+  CreatedAt   DateTime    @default(now())
+  Canteen     Canteen     @relation(fields: [CanteenId], references: [Id], onDelete: Cascade)
+  OrderItems  OrderItem[]
+
+  @@index([CanteenId])
+  @@map("menu_items")
+}
+
+model Order {
+  Id           Int         @id @default(autoincrement())
+  CanteenId    Int
+  QueueNumber  String
+  CustomerName String
+  TotalAmount  Int
+  Status       OrderStatus @default(WAITING)
+  CreatedAt    DateTime    @default(now())
+  CompletedAt  DateTime?
+  Canteen      Canteen     @relation(fields: [CanteenId], references: [Id], onDelete: Cascade)
+  OrderItems   OrderItem[]
+
+  @@index([CanteenId])
+  @@index([CreatedAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  Id           Int      @id @default(autoincrement())
+  OrderId      Int
+  MenuItemId   Int
+  MenuItemName String
+  Price        Int
+  Quantity     Int
+  Subtotal     Int
+  Order        Order    @relation(fields: [OrderId], references: [Id], onDelete: Cascade)
+  MenuItem     MenuItem @relation(fields: [MenuItemId], references: [Id])
+
+  @@index([OrderId])
+  @@index([MenuItemId])
+  @@map("order_items")
+}

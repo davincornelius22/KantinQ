@@ -6,12 +6,24 @@ export enum OrderStatus {
   CANCELLED = "CANCELLED",
 }
 
+export enum QueueCondition {
+  SEPI = "SEPI",
+  SEDANG = "SEDANG",
+  RAMAI = "RAMAI",
+}
+
 export const OrderStatusLabel: Record<OrderStatus, string> = {
   [OrderStatus.WAITING]: "Menunggu",
   [OrderStatus.PROCESSING]: "Diproses",
   [OrderStatus.READY]: "Siap Diambil",
   [OrderStatus.COMPLETED]: "Selesai",
   [OrderStatus.CANCELLED]: "Dibatalkan",
+};
+
+export const QueueConditionLabel: Record<QueueCondition, string> = {
+  [QueueCondition.SEPI]: "Sepi",
+  [QueueCondition.SEDANG]: "Sedang",
+  [QueueCondition.RAMAI]: "Ramai",
 };
 
 export const ValidTransitions: Record<OrderStatus, OrderStatus[]> = {
