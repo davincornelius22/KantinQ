@@ -7,13 +7,13 @@ import {
 } from "@kantinq/shared";
 import { ApiClient } from "../services/api";
 import { QueueConditionBadge } from "../components/Badge";
+import { MenuList } from "../components/MenuList";
 import {
   MapPin,
   Plus,
   Minus,
   ShoppingCart,
   Trash2,
-  Coffee,
   CheckCircle2,
   AlertCircle,
   Loader2,
@@ -190,100 +190,15 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
             />
           </div>
 
-          {filteredMenus.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
-              <Coffee className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-600 font-semibold">Tidak ada menu yang sesuai</p>
-              <p className="text-slate-400 text-sm mt-1">Coba kata kunci pencarian yang lain.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {filteredMenus.map((menu) => {
-                const cartEntry = cart.find((item) => item.menu.Id === menu.Id);
-                const isAvailable = menu.IsAvailable;
-
-                return (
-                  <div
-                    key={menu.Id}
-                    className={`bg-white rounded-2xl p-5 border transition-all flex flex-col justify-between ${
-                      isAvailable
-                        ? "border-slate-200 hover:border-orange-300 hover:shadow-md"
-                        : "border-slate-200 bg-slate-50/70 opacity-60"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-bold text-slate-900 text-base leading-snug">
-                          {menu.Name}
-                        </h3>
-                        <span
-                          className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                            isAvailable
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-rose-100 text-rose-800"
-                          }`}
-                        >
-                          {isAvailable ? "Tersedia" : "Habis"}
-                        </span>
-                      </div>
-
-                      {menu.Description && (
-                        <p className="text-xs text-slate-500 line-clamp-2 mb-4">
-                          {menu.Description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between mt-auto">
-                      <div className="font-extrabold text-orange-600 text-base sm:text-lg">
-                        {formatRupiah(menu.Price)}
-                      </div>
-
-                      {isAvailable ? (
-                        cartEntry ? (
-                          <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg p-1">
-                            <button
-                              type="button"
-                              onClick={() => updateQuantity(menu.Id, -1)}
-                              className="w-7 h-7 flex items-center justify-center rounded-md bg-white text-orange-700 shadow-xs hover:bg-orange-600 hover:text-white transition-colors cursor-pointer"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="w-5 text-center text-sm font-bold text-orange-950">
-                              {cartEntry.quantity}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => updateQuantity(menu.Id, 1)}
-                              className="w-7 h-7 flex items-center justify-center rounded-md bg-white text-orange-700 shadow-xs hover:bg-orange-600 hover:text-white transition-colors cursor-pointer"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => addToCart(menu)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-600 text-white text-xs font-bold hover:bg-orange-700 transition shadow-xs cursor-pointer"
-                          >
-                            <Plus className="w-4 h-4" />
-                            <span>Pilih</span>
-                          </button>
-                        )
-                      ) : (
-                        <button
-                          disabled
-                          className="px-3 py-1.5 rounded-lg bg-slate-200 text-slate-400 text-xs font-medium cursor-not-allowed"
-                        >
-                          Stok Habis
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <MenuList
+            menus={filteredMenus}
+            onAddToCart={addToCart}
+            cartQuantities={cart.reduce<Record<number, number>>((acc, item) => {
+              acc[item.menu.Id] = item.quantity;
+              return acc;
+            }, {})}
+            onUpdateQuantity={updateQuantity}
+          />
         </div>
 
         {/* Right Column: Shopping Cart & Order Form */}

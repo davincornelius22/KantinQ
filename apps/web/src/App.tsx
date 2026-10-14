@@ -13,12 +13,13 @@ import { QueueMonitorPage } from "./pages/QueueMonitorPage";
 import { SellerDashboardPage } from "./pages/SellerDashboardPage";
 import { MenuManagementPage } from "./pages/MenuManagementPage";
 import { CanteenQrPage } from "./pages/CanteenQrPage";
+import { MOCK_MENUS } from "./components/MenuList";
 import { RefreshCw } from "lucide-react";
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavTab>("order");
   const [canteen, setCanteen] = useState<Canteen | null>(null);
-  const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [menus, setMenus] = useState<MenuItem[]>(MOCK_MENUS);
   const [queueCondition, setQueueCondition] = useState<QueueCondition>(
     QueueCondition.SEPI
   );
@@ -38,12 +39,22 @@ export const App: React.FC = () => {
       setCanteen(c);
 
       const m = await ApiClient.getMenu(canteenId);
-      setMenus(m);
+      setMenus(m && m.length > 0 ? m : MOCK_MENUS);
 
       const q = await ApiClient.getQueue(canteenId);
       setQueueCondition(q.Condition);
     } catch (err) {
-      console.error("Gagal memuat data awal:", err);
+      console.warn("Backend API tidak terdeteksi, beralih ke mock data KantinQ:", err);
+      setCanteen({
+        Id: canteenId,
+        Name: "KantinQ Kampus (Demo)",
+        Location: "Kantin Utama Gedung Kuliah Lt. 1",
+        Description: "Sistem Pemesanan & Antrean Digital Kantin Kampus Berbasis QR Code.",
+        IsActive: true,
+        CreatedAt: new Date().toISOString(),
+      });
+      setMenus(MOCK_MENUS);
+      setQueueCondition(QueueCondition.SEPI);
     } finally {
       setLoading(false);
     }
