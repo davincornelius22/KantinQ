@@ -13,8 +13,10 @@ import { QueueMonitorPage } from "./pages/QueueMonitorPage";
 import { SellerDashboardPage } from "./pages/SellerDashboardPage";
 import { MenuManagementPage } from "./pages/MenuManagementPage";
 import { CanteenQrPage } from "./pages/CanteenQrPage";
+import { MyOrdersPage } from "./pages/MyOrdersPage";
 import { MOCK_MENUS } from "./components/MenuList";
-import { RefreshCw } from "lucide-react";
+import { useCart } from "./hooks/useCart";
+import { useOrderHistory } from "./hooks/useOrderHistory";
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavTab>("order");
@@ -27,10 +29,12 @@ export const App: React.FC = () => {
     useState<OrderResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check URL param for ?canteenId=X
   const urlParams = new URLSearchParams(window.location.search);
   const canteenIdFromUrl = parseInt(urlParams.get("canteenId") || "1", 10);
   const canteenId = isNaN(canteenIdFromUrl) ? 1 : canteenIdFromUrl;
+
+  const cartHook = useCart(canteenId);
+  const { myOrders, saveOrder, clearHistory } = useOrderHistory();
 
   const loadInitialData = async () => {
     try {
@@ -75,6 +79,7 @@ export const App: React.FC = () => {
   };
 
   const handleOrderSuccess = (newOrder: OrderResponse) => {
+    saveOrder(newOrder);
     setActivePlacedOrder(newOrder);
     setActiveTab("order");
   };
@@ -93,8 +98,14 @@ export const App: React.FC = () => {
       {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          if (tab !== "order") {
+            setActivePlacedOrder(null);
+          }
+        }}
         canteenName={canteen?.Name || "Kantin Kampus"}
+        cartItemCount={cartHook.totalItemsCount}
       />
 
       {/* Main Content View */}
@@ -111,8 +122,27 @@ export const App: React.FC = () => {
               menus={menus}
               queueCondition={queueCondition}
               onOrderSuccess={handleOrderSuccess}
+              cart={cartHook.cart}
+              cartQuantities={cartHook.cartQuantities}
+              totalAmount={cartHook.totalAmount}
+              totalItemsCount={cartHook.totalItemsCount}
+              onAddToCart={cartHook.addToCart}
+              onUpdateQuantity={cartHook.updateQuantity}
+              onRemoveFromCart={cartHook.removeFromCart}
+              onClearCart={cartHook.clearCart}
             />
           )
+        )}
+
+        {activeTab === "myorders" && (
+          <MyOrdersPage
+            orders={myOrders}
+            onClearHistory={clearHistory}
+            onViewOrderDetail={(order) => {
+              setActivePlacedOrder(order);
+              setActiveTab("order");
+            }}
+          />
         )}
 
         {canteen && activeTab === "queue" && (

@@ -1,24 +1,39 @@
 import React from "react";
-import { UtensilsCrossed, Users, LayoutDashboard, BookOpen, QrCode } from "lucide-react";
+import {
+  UtensilsCrossed,
+  Users,
+  LayoutDashboard,
+  BookOpen,
+  QrCode,
+  ClipboardList,
+} from "lucide-react";
 
-export type NavTab = "order" | "queue" | "dashboard" | "menu" | "canteen";
+export type NavTab = "order" | "myorders" | "queue" | "dashboard" | "menu" | "canteen";
 
 interface NavbarProps {
   activeTab: NavTab;
   onTabChange: (tab: NavTab) => void;
   canteenName: string;
+  cartItemCount?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   onTabChange,
   canteenName,
+  cartItemCount = 0,
 }) => {
   const tabs = [
     {
       id: "order" as NavTab,
       label: "Pesan Menu",
       icon: <UtensilsCrossed className="w-4 h-4" />,
+      badge: cartItemCount > 0 ? cartItemCount : undefined,
+    },
+    {
+      id: "myorders" as NavTab,
+      label: "Pesanan Saya",
+      icon: <ClipboardList className="w-4 h-4" />,
     },
     {
       id: "queue" as NavTab,
@@ -74,7 +89,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
-                  className={`flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  className={`relative flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
                     isActive
                       ? "bg-orange-600 text-white shadow-sm shadow-orange-600/30"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
@@ -82,6 +97,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span
+                      className={`ml-0.5 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full ${
+                        isActive
+                          ? "bg-white text-orange-600"
+                          : "bg-orange-600 text-white"
+                      }`}
+                    >
+                      {tab.badge > 9 ? "9+" : tab.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}

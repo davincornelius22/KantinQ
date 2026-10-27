@@ -8,6 +8,12 @@ import {
 import { ApiClient } from "../services/api";
 import { QueueConditionBadge } from "../components/Badge";
 import { MenuList } from "../components/MenuList";
+import { CartItem } from "../hooks/useCart";
+import {
+  validateCustomerName,
+  validateCartNotEmpty,
+  formatRupiah,
+} from "../utils/validation";
 import {
   MapPin,
   Plus,
@@ -24,11 +30,14 @@ interface CustomerOrderingPageProps {
   menus: MenuItem[];
   queueCondition: QueueCondition;
   onOrderSuccess: (order: OrderResponse) => void;
-}
-
-interface CartItem {
-  menu: MenuItem;
-  quantity: number;
+  cart: CartItem[];
+  cartQuantities: Record<number, number>;
+  totalAmount: number;
+  totalItemsCount: number;
+  onAddToCart: (menu: MenuItem) => void;
+  onUpdateQuantity: (menuId: number, delta: number) => void;
+  onRemoveFromCart: (menuId: number) => void;
+  onClearCart: () => void;
 }
 
 export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
@@ -36,64 +45,43 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
   menus,
   queueCondition,
   onOrderSuccess,
+  cart,
+  cartQuantities,
+  totalAmount,
+  totalItemsCount,
+  onAddToCart,
+  onUpdateQuantity,
+  onRemoveFromCart,
+  onClearCart,
 }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
-  const addToCart = (menu: MenuItem) => {
-    if (!menu.IsAvailable) return;
-    setCart((prev) => {
-      const existing = prev.find((item) => item.menu.Id === menu.Id);
-      if (existing) {
-        return prev.map((item) =>
-          item.menu.Id === menu.Id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-      return [...prev, { menu, quantity: 1 }];
-    });
+  const handleNameChange = (value: string) => {
+    setCustomerName(value);
+    if (nameError) {
+      const result = validateCustomerName(value);
+      if (result.valid) setNameError(null);
+    }
   };
-
-  const updateQuantity = (menuId: number, delta: number) => {
-    setCart((prev) => {
-      return prev
-        .map((item) => {
-          if (item.menu.Id === menuId) {
-            const nextQty = item.quantity + delta;
-            return nextQty > 0 ? { ...item, quantity: nextQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as CartItem[];
-    });
-  };
-
-  const removeFromCart = (menuId: number) => {
-    setCart((prev) => prev.filter((item) => item.menu.Id !== menuId));
-  };
-
-  const totalAmount = cart.reduce(
-    (sum, item) => sum + item.menu.Price * item.quantity,
-    0
-  );
-
-  const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setNameError(null);
 
-    if (!customerName.trim()) {
-      setErrorMessage("Silakan masukkan nama pemesan terlebih dahulu");
+    const nameValidation = validateCustomerName(customerName);
+    if (!nameValidation.valid) {
+      setNameError(nameValidation.message);
       return;
     }
 
-    if (cart.length === 0) {
-      setErrorMessage("Keranjang pesanan masih kosong");
+    const cartValidation = validateCartNotEmpty(cart.length);
+    if (!cartValidation.valid) {
+      setErrorMessage(cartValidation.message);
       return;
     }
 
@@ -107,23 +95,15 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
         })),
       });
 
-      setCart([]);
+      onClearCart();
       setCustomerName("");
       onOrderSuccess(newOrder);
     } catch (err: unknown) {
       const error = err as Error;
-      setErrorMessage(error.message || "Gagal membuat pesanan");
+      setErrorMessage(error.message || "Gagal membuat pesanan. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const formatRupiah = (val: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(val);
   };
 
   const filteredMenus = menus.filter(
@@ -192,12 +172,9 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
 
           <MenuList
             menus={filteredMenus}
-            onAddToCart={addToCart}
-            cartQuantities={cart.reduce<Record<number, number>>((acc, item) => {
-              acc[item.menu.Id] = item.quantity;
-              return acc;
-            }, {})}
-            onUpdateQuantity={updateQuantity}
+            onAddToCart={onAddToCart}
+            cartQuantities={cartQuantities}
+            onUpdateQuantity={onUpdateQuantity}
           />
         </div>
 
@@ -249,7 +226,7 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.menu.Id, -1)}
+                        onClick={() => onUpdateQuantity(item.menu.Id, -1)}
                         className="w-6 h-6 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
@@ -259,14 +236,14 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
                       </span>
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.menu.Id, 1)}
+                        onClick={() => onUpdateQuantity(item.menu.Id, 1)}
                         className="w-6 h-6 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.menu.Id)}
+                        onClick={() => onRemoveFromCart(item.menu.Id)}
                         className="w-6 h-6 rounded flex items-center justify-center text-rose-500 hover:bg-rose-50 ml-1 cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -299,10 +276,20 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
                   type="text"
                   placeholder="Contoh: Budi (NIM / Meja)"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  required
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  className={`w-full px-3.5 py-2.5 text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
+                    nameError
+                      ? "border-rose-400 bg-rose-50/30"
+                      : "border-slate-300"
+                  }`}
+                  maxLength={50}
                 />
+                {nameError && (
+                  <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {nameError}
+                  </p>
+                )}
               </div>
 
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">

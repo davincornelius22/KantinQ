@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import { MenuItem, CreateMenuItemDto } from "@kantinq/shared";
 import { ApiClient } from "../services/api";
 import {
+  validateMenuName,
+  validateMenuPrice,
+  formatRupiah,
+} from "../utils/validation";
+import {
   Plus,
   Edit2,
   Trash2,
@@ -9,6 +14,7 @@ import {
   XCircle,
   X,
   AlertTriangle,
+  AlertCircle,
 } from "lucide-react";
 
 interface MenuManagementPageProps {
@@ -58,10 +64,21 @@ export const MenuManagementPage: React.FC<MenuManagementPageProps> = ({
     setIsModalOpen(true);
   };
 
+  const [formError, setFormError] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.Name.trim()) {
-      alert("Nama menu tidak boleh kosong");
+    setFormError(null);
+
+    const nameCheck = validateMenuName(formData.Name);
+    if (!nameCheck.valid) {
+      setFormError(nameCheck.message);
+      return;
+    }
+
+    const priceCheck = validateMenuPrice(Number(formData.Price));
+    if (!priceCheck.valid) {
+      setFormError(priceCheck.message);
       return;
     }
 
@@ -82,9 +99,10 @@ export const MenuManagementPage: React.FC<MenuManagementPageProps> = ({
         });
       }
       setIsModalOpen(false);
+      setFormError(null);
       onRefreshMenus();
     } catch (err) {
-      alert((err as Error).message || "Gagal menyimpan menu");
+      setFormError((err as Error).message || "Gagal menyimpan menu");
     }
   };
 
@@ -108,13 +126,7 @@ export const MenuManagementPage: React.FC<MenuManagementPageProps> = ({
     }
   };
 
-  const formatRupiah = (val: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(val);
-  };
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -239,6 +251,12 @@ export const MenuManagementPage: React.FC<MenuManagementPageProps> = ({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {formError && (
+                <div className="flex items-start gap-2 p-3 text-xs rounded-xl bg-rose-50 border border-rose-200 text-rose-800">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{formError}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Nama Menu <span className="text-rose-500">*</span>
