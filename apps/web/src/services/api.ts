@@ -227,6 +227,64 @@ let fallbackOrders: OrderResponse[] = [
   },
 ];
 
+const MOCK_ORDERS_KEY = "kantinq_mock_orders";
+const MOCK_MENUS_KEY = "kantinq_mock_menus";
+const MOCK_CANTEEN_KEY = "kantinq_mock_canteen";
+
+function getFallbackCanteen(): Canteen {
+  try {
+    const raw = typeof window !== "undefined" ? window.localStorage.getItem(MOCK_CANTEEN_KEY) : null;
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return fallbackCanteen;
+}
+
+function saveFallbackCanteen(c: Canteen): void {
+  try {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(MOCK_CANTEEN_KEY, JSON.stringify(c));
+    }
+  } catch {}
+}
+
+function getFallbackMenus(): MenuItem[] {
+  try {
+    const raw = typeof window !== "undefined" ? window.localStorage.getItem(MOCK_MENUS_KEY) : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return fallbackMenus;
+}
+
+function saveFallbackMenus(m: MenuItem[]): void {
+  try {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(MOCK_MENUS_KEY, JSON.stringify(m));
+    }
+  } catch {}
+}
+
+function getFallbackOrders(): OrderResponse[] {
+  try {
+    const raw = typeof window !== "undefined" ? window.localStorage.getItem(MOCK_ORDERS_KEY) : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return fallbackOrders;
+}
+
+function saveFallbackOrders(o: OrderResponse[]): void {
+  try {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(MOCK_ORDERS_KEY, JSON.stringify(o));
+    }
+  } catch {}
+}
+
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...options,
@@ -249,7 +307,7 @@ export const ApiClient = {
     try {
       return await fetchJson<Canteen[]>(`${API_BASE}/canteens`);
     } catch {
-      return [fallbackCanteen];
+      return [getFallbackCanteen()];
     }
   },
 
@@ -257,7 +315,7 @@ export const ApiClient = {
     try {
       return await fetchJson<Canteen>(`${API_BASE}/canteens/${id}`);
     } catch {
-      return fallbackCanteen;
+      return getFallbackCanteen();
     }
   },
 
@@ -268,8 +326,10 @@ export const ApiClient = {
         body: JSON.stringify(dto),
       });
     } catch {
-      Object.assign(fallbackCanteen, dto);
-      return fallbackCanteen;
+      const c = getFallbackCanteen();
+      Object.assign(c, dto);
+      saveFallbackCanteen(c);
+      return c;
     }
   },
 
@@ -277,7 +337,7 @@ export const ApiClient = {
     try {
       return await fetchJson<MenuItem[]>(`${API_BASE}/canteens/${canteenId}/menu`);
     } catch {
-      return fallbackMenus;
+      return getFallbackMenus();
     }
   },
 
@@ -288,6 +348,7 @@ export const ApiClient = {
         body: JSON.stringify(dto),
       });
     } catch {
+      const menus = getFallbackMenus();
       const newItem: MenuItem = {
         Id: Date.now(),
         CanteenId: canteenId,
@@ -297,7 +358,8 @@ export const ApiClient = {
         IsAvailable: dto.IsAvailable ?? true,
         CreatedAt: new Date().toISOString(),
       };
-      fallbackMenus.push(newItem);
+      menus.push(newItem);
+      saveFallbackMenus(menus);
       return newItem;
     }
   },
@@ -309,9 +371,14 @@ export const ApiClient = {
         body: JSON.stringify(dto),
       });
     } catch {
-      const item = fallbackMenus.find((m) => m.Id === id);
-      if (item) Object.assign(item, dto);
-      return item || fallbackMenus[0];
+      const menus = getFallbackMenus();
+      const item = menus.find((m) => m.Id === id);
+      if (item) {
+        Object.assign(item, dto);
+        saveFallbackMenus(menus);
+        return item;
+      }
+      return menus[0] || fallbackMenus[0];
     }
   },
 
@@ -319,8 +386,9 @@ export const ApiClient = {
     try {
       await fetchJson(`${API_BASE}/menu/${id}`, { method: "DELETE" });
     } catch {
-      const index = fallbackMenus.findIndex((m) => m.Id === id);
-      if (index !== -1) fallbackMenus.splice(index, 1);
+      const menus = getFallbackMenus();
+      const filtered = menus.filter((m) => m.Id !== id);
+      saveFallbackMenus(filtered);
     }
   },
 
@@ -331,9 +399,14 @@ export const ApiClient = {
         body: JSON.stringify({ IsAvailable: isAvailable }),
       });
     } catch {
-      const item = fallbackMenus.find((m) => m.Id === id);
-      if (item) item.IsAvailable = isAvailable;
-      return item || fallbackMenus[0];
+      const menus = getFallbackMenus();
+      const item = menus.find((m) => m.Id === id);
+      if (item) {
+        item.IsAvailable = isAvailable;
+        saveFallbackMenus(menus);
+        return item;
+      }
+      return menus[0] || fallbackMenus[0];
     }
   },
 
@@ -344,11 +417,13 @@ export const ApiClient = {
         body: JSON.stringify(dto),
       });
     } catch {
-      const nextNum = fallbackOrders.length + 1;
+      const orders = getFallbackOrders();
+      const menus = getFallbackMenus();
+      const nextNum = orders.length + 1;
       const queueNumber = `A-${String(nextNum).padStart(3, "0")}`;
 
       const items = dto.Items.map((item, idx) => {
-        const m = fallbackMenus.find((menu) => menu.Id === item.MenuItemId) || fallbackMenus[0];
+        const m = menus.find((menu) => menu.Id === item.MenuItemId) || menus[0] || fallbackMenus[0];
         return {
           Id: Date.now() + idx,
           OrderId: nextNum,
@@ -374,7 +449,8 @@ export const ApiClient = {
         OrderItems: items,
       };
 
-      fallbackOrders.push(newOrder);
+      orders.unshift(newOrder);
+      saveFallbackOrders(orders);
       return newOrder;
     }
   },
@@ -383,7 +459,8 @@ export const ApiClient = {
     try {
       return await fetchJson<OrderResponse>(`${API_BASE}/orders/${id}`);
     } catch {
-      return fallbackOrders.find((o) => o.Id === id) || fallbackOrders[0];
+      const orders = getFallbackOrders();
+      return orders.find((o) => o.Id === id) || orders[0] || fallbackOrders[0];
     }
   },
 
@@ -391,8 +468,9 @@ export const ApiClient = {
     try {
       return await fetchJson<OrderResponse[]>(`${API_BASE}/canteens/${canteenId}/orders`);
     } catch {
+      const orders = getFallbackOrders();
       const active = [OrderStatus.WAITING, OrderStatus.PROCESSING, OrderStatus.READY];
-      return fallbackOrders.filter((o) => active.includes(o.Status));
+      return orders.filter((o) => active.includes(o.Status));
     }
   },
 
@@ -402,8 +480,9 @@ export const ApiClient = {
         `${API_BASE}/canteens/${canteenId}/order-history`
       );
     } catch {
+      const orders = getFallbackOrders();
       const history = [OrderStatus.COMPLETED, OrderStatus.CANCELLED];
-      return fallbackOrders.filter((o) => history.includes(o.Status));
+      return orders.filter((o) => history.includes(o.Status));
     }
   },
 
@@ -414,14 +493,17 @@ export const ApiClient = {
         body: JSON.stringify({ Status: status }),
       });
     } catch {
-      const order = fallbackOrders.find((o) => o.Id === id);
+      const orders = getFallbackOrders();
+      const order = orders.find((o) => o.Id === id);
       if (order) {
         order.Status = status;
         if (status === OrderStatus.COMPLETED) {
           order.CompletedAt = new Date().toISOString();
         }
+        saveFallbackOrders(orders);
+        return order;
       }
-      return order || fallbackOrders[0];
+      return orders[0] || fallbackOrders[0];
     }
   },
 
@@ -429,7 +511,9 @@ export const ApiClient = {
     try {
       return await fetchJson<QueueResponse>(`${API_BASE}/canteens/${canteenId}/queue`);
     } catch {
-      const active = fallbackOrders.filter((o) =>
+      const orders = getFallbackOrders();
+      const canteen = getFallbackCanteen();
+      const active = orders.filter((o) =>
         [OrderStatus.WAITING, OrderStatus.PROCESSING, OrderStatus.READY].includes(o.Status)
       );
 
@@ -442,7 +526,7 @@ export const ApiClient = {
 
       return {
         CanteenId: canteenId,
-        CanteenName: fallbackCanteen.Name,
+        CanteenName: canteen.Name,
         Condition: condition,
         ActiveCount: active.length,
         WaitingCount: active.filter((o) => o.Status === OrderStatus.WAITING).length,
@@ -459,10 +543,11 @@ export const ApiClient = {
         `${API_BASE}/canteens/${canteenId}/dashboard`
       );
     } catch {
-      const active = fallbackOrders.filter((o) =>
+      const orders = getFallbackOrders();
+      const active = orders.filter((o) =>
         [OrderStatus.WAITING, OrderStatus.PROCESSING, OrderStatus.READY].includes(o.Status)
       );
-      const completed = fallbackOrders.filter((o) => o.Status === OrderStatus.COMPLETED);
+      const completed = orders.filter((o) => o.Status === OrderStatus.COMPLETED);
 
       const condition =
         active.length <= 5
@@ -472,7 +557,7 @@ export const ApiClient = {
           : QueueCondition.RAMAI;
 
       return {
-        TotalOrdersToday: fallbackOrders.length,
+        TotalOrdersToday: orders.length,
         WaitingOrders: active.filter((o) => o.Status === OrderStatus.WAITING).length,
         ProcessingOrders: active.filter((o) => o.Status === OrderStatus.PROCESSING).length,
         ReadyOrders: active.filter((o) => o.Status === OrderStatus.READY).length,

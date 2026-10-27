@@ -1,25 +1,60 @@
-import React from "react";
+import React, { useState } from "react";
 import { OrderResponse } from "@kantinq/shared";
 import { StatusBadge } from "../components/Badge";
+import { ApiClient } from "../services/api";
 import { formatRupiah, formatDate } from "../utils/validation";
 import {
   Receipt,
   Clock,
   Trash2,
   ShoppingBag,
+  RefreshCw,
+  CheckCircle2,
 } from "lucide-react";
 
 interface MyOrdersPageProps {
   orders: OrderResponse[];
   onClearHistory: () => void;
   onViewOrderDetail: (order: OrderResponse) => void;
+  onUpdateOrders?: (orders: OrderResponse[]) => void;
 }
 
 export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
   orders,
   onClearHistory,
   onViewOrderDetail,
+  onUpdateOrders,
 }) => {
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+
+  const handleSyncStatuses = async () => {
+    if (orders.length === 0) return;
+    try {
+      setIsSyncing(true);
+      const updatedList = await Promise.all(
+        orders.map(async (o) => {
+          try {
+            const fresh = await ApiClient.getOrderById(o.Id);
+            return fresh || o;
+          } catch {
+            return o;
+          }
+        })
+      );
+      if (onUpdateOrders) {
+        onUpdateOrders(updatedList);
+      }
+      setSyncFeedback("Status pesanan berhasil diperbarui!");
+      setTimeout(() => setSyncFeedback(null), 3000);
+    } catch {
+      setSyncFeedback("Gagal memperbarui beberapa status pesanan.");
+      setTimeout(() => setSyncFeedback(null), 3000);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   if (orders.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
@@ -36,7 +71,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900">
             Pesanan Saya
@@ -45,19 +80,39 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
             {orders.length} pesanan tersimpan di perangkat ini
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            if (confirm("Hapus semua riwayat pesanan di perangkat ini?")) {
-              onClearHistory();
-            }
-          }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-300 text-rose-600 hover:bg-rose-50 text-xs font-bold transition cursor-pointer"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          <span>Hapus Riwayat</span>
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleSyncStatuses}
+            disabled={isSyncing}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+            <span>Segarkan Status</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm("Hapus semua riwayat pesanan di perangkat ini?")) {
+                onClearHistory();
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-300 text-rose-600 hover:bg-rose-50 text-xs font-bold transition cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Hapus Riwayat</span>
+          </button>
+        </div>
       </div>
+
+      {syncFeedback && (
+        <div className="flex items-center gap-2 p-3 text-xs rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 animate-fadeIn">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{syncFeedback}</span>
+        </div>
+      )}
 
       <div className="space-y-3">
         {orders.map((order) => (

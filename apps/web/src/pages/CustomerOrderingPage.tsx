@@ -12,6 +12,7 @@ import { CartItem } from "../hooks/useCart";
 import {
   validateCustomerName,
   validateCartNotEmpty,
+  validateCartAvailability,
   formatRupiah,
 } from "../utils/validation";
 import {
@@ -23,6 +24,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Filter,
 } from "lucide-react";
 
 interface CustomerOrderingPageProps {
@@ -40,6 +42,8 @@ interface CustomerOrderingPageProps {
   onClearCart: () => void;
 }
 
+type MenuCategory = "all" | "food" | "drink" | "available";
+
 export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
   canteen,
   menus,
@@ -56,6 +60,7 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
 }) => {
   const [customerName, setCustomerName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<MenuCategory>("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -85,6 +90,12 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
       return;
     }
 
+    const availabilityValidation = validateCartAvailability(cart);
+    if (!availabilityValidation.valid) {
+      setErrorMessage(availabilityValidation.message);
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const newOrder = await ApiClient.createOrder(canteen.Id, {
@@ -106,12 +117,36 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
     }
   };
 
-  const filteredMenus = menus.filter(
-    (m) =>
+  const isDrink = (name: string, desc?: string | null) => {
+    const text = `${name} ${desc || ""}`.toLowerCase();
+    return /teh|kopi|jus|jeruk|es |air |mineral|susu|minuman|tea|coffee/.test(text);
+  };
+
+  const filteredMenus = menus.filter((m) => {
+    const matchesSearch =
       m.Name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (m.Description &&
-        m.Description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+        m.Description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    if (selectedCategory === "available") return m.IsAvailable;
+    if (selectedCategory === "drink") return isDrink(m.Name, m.Description);
+    if (selectedCategory === "food") return !isDrink(m.Name, m.Description);
+    return true;
+  });
+
+  const categoryCounts = {
+    all: menus.length,
+    food: menus.filter((m) => !isDrink(m.Name, m.Description)).length,
+    drink: menus.filter((m) => isDrink(m.Name, m.Description)).length,
+    available: menus.filter((m) => m.IsAvailable).length,
+  };
+
+  const handleResetSearchAndFilter = () => {
+    setSearchQuery("");
+    setSelectedCategory("all");
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -170,11 +205,60 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
             />
           </div>
 
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("all")}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
+                selectedCategory === "all"
+                  ? "bg-orange-600 text-white shadow-xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              Semua ({categoryCounts.all})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("food")}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
+                selectedCategory === "food"
+                  ? "bg-orange-600 text-white shadow-xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              Makanan ({categoryCounts.food})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("drink")}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
+                selectedCategory === "drink"
+                  ? "bg-orange-600 text-white shadow-xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              Minuman ({categoryCounts.drink})
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("available")}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
+                selectedCategory === "available"
+                  ? "bg-orange-600 text-white shadow-xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              Tersedia ({categoryCounts.available})
+            </button>
+          </div>
+
           <MenuList
             menus={filteredMenus}
             onAddToCart={onAddToCart}
             cartQuantities={cartQuantities}
             onUpdateQuantity={onUpdateQuantity}
+            onResetSearch={handleResetSearchAndFilter}
           />
         </div>
 
@@ -209,11 +293,20 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
                 {cart.map((item) => (
                   <div
                     key={item.menu.Id}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs sm:text-sm"
+                    className={`flex items-center justify-between p-2.5 rounded-xl border text-xs sm:text-sm ${
+                      item.menu.IsAvailable
+                        ? "bg-slate-50 border-slate-100"
+                        : "bg-rose-50/50 border-rose-200"
+                    }`}
                   >
                     <div className="min-w-0 pr-2">
-                      <div className="font-bold text-slate-900 truncate">
-                        {item.menu.Name}
+                      <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                        <span>{item.menu.Name}</span>
+                        {!item.menu.IsAvailable && (
+                          <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded">
+                            Habis
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-slate-500">
                         {formatRupiah(item.menu.Price)} x {item.quantity} ={" "}

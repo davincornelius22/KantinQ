@@ -34,7 +34,7 @@ export const App: React.FC = () => {
   const canteenId = isNaN(canteenIdFromUrl) ? 1 : canteenIdFromUrl;
 
   const cartHook = useCart(canteenId);
-  const { myOrders, saveOrder, clearHistory } = useOrderHistory();
+  const { myOrders, saveOrder, clearHistory, updateOrders } = useOrderHistory();
 
   const loadInitialData = async () => {
     try {
@@ -138,6 +138,7 @@ export const App: React.FC = () => {
           <MyOrdersPage
             orders={myOrders}
             onClearHistory={clearHistory}
+            onUpdateOrders={updateOrders}
             onViewOrderDetail={(order) => {
               setActivePlacedOrder(order);
               setActiveTab("order");

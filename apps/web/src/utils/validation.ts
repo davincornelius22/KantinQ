@@ -14,12 +14,28 @@ export function validateCustomerName(name: string): ValidationResult {
   if (trimmed.length > 50) {
     return { valid: false, message: "Nama pemesan maksimal 50 karakter" };
   }
+  if (!/[a-zA-Z]/.test(trimmed)) {
+    return { valid: false, message: "Nama pemesan harus mengandung huruf alfabet" };
+  }
   return { valid: true, message: "" };
 }
 
 export function validateCartNotEmpty(cartLength: number): ValidationResult {
   if (cartLength === 0) {
     return { valid: false, message: "Keranjang pesanan masih kosong. Pilih minimal 1 menu." };
+  }
+  return { valid: true, message: "" };
+}
+
+export function validateCartAvailability(
+  items: { menu: { Name: string; IsAvailable: boolean } }[]
+): ValidationResult {
+  const unavailable = items.find((item) => !item.menu.IsAvailable);
+  if (unavailable) {
+    return {
+      valid: false,
+      message: `Menu "${unavailable.menu.Name}" sedang habis stok. Silakan kurangi atau hapus dari keranjang.`,
+    };
   }
   return { valid: true, message: "" };
 }

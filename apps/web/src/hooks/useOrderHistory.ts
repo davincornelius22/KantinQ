@@ -29,5 +29,12 @@ export function useOrderHistory() {
     setMyOrders([]);
   }, [setMyOrders]);
 
-  return { myOrders, saveOrder, clearHistory };
+  const updateOrders = useCallback(
+    (orders: OrderResponse[]) => {
+      setMyOrders(orders.slice(0, MAX_SAVED_ORDERS));
+    },
+    [setMyOrders]
+  );
+
+  return { myOrders, saveOrder, clearHistory, updateOrders };
 }

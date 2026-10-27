@@ -64,6 +64,7 @@ export interface MenuListProps {
   onAddToCart?: (menu: MenuItem) => void;
   cartQuantities?: Record<number, number>;
   onUpdateQuantity?: (menuId: number, delta: number) => void;
+  onResetSearch?: () => void;
 }
 
 export const MenuList: React.FC<MenuListProps> = ({
@@ -71,6 +72,7 @@ export const MenuList: React.FC<MenuListProps> = ({
   onAddToCart,
   cartQuantities = {},
   onUpdateQuantity,
+  onResetSearch,
 }) => {
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -85,7 +87,16 @@ export const MenuList: React.FC<MenuListProps> = ({
       <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 shadow-xs">
         <Coffee className="w-12 h-12 text-slate-300 mx-auto mb-3" />
         <p className="text-slate-600 font-semibold">Tidak ada menu yang sesuai</p>
-        <p className="text-slate-400 text-sm mt-1">Coba kata kunci pencarian yang lain.</p>
+        <p className="text-slate-400 text-sm mt-1">Coba kata kunci pencarian atau filter yang lain.</p>
+        {onResetSearch && (
+          <button
+            type="button"
+            onClick={onResetSearch}
+            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 text-xs font-bold hover:bg-orange-100 transition cursor-pointer"
+          >
+            <span>Reset Pencarian & Filter</span>
+          </button>
+        )}
       </div>
     );
   }

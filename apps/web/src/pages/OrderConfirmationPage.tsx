@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { OrderResponse, OrderStatus } from "@kantinq/shared";
 import { StatusBadge } from "../components/Badge";
 import { ApiClient } from "../services/api";
+import { formatTime } from "../utils/validation";
 import {
   CheckCircle,
   RefreshCw,
@@ -23,6 +24,9 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
 }) => {
   const [order, setOrder] = useState<OrderResponse>(initialOrder);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<string>(
+    formatTime(new Date())
+  );
 
   const handleRefresh = async () => {
     try {
@@ -30,6 +34,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
       const updated = await ApiClient.getOrderById(order.Id);
       if (updated) {
         setOrder(updated);
+        setLastRefreshed(formatTime(new Date()));
       }
     } catch (err) {
       console.error("Gagal memperbarui status pesanan:", err);
@@ -37,6 +42,19 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
       setIsRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    if (
+      order.Status === OrderStatus.COMPLETED ||
+      order.Status === OrderStatus.CANCELLED
+    ) {
+      return;
+    }
+    const timer = setInterval(() => {
+      handleRefresh();
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [order.Id, order.Status]);
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -233,6 +251,10 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
               <span>Pesan Menu Lain</span>
             </button>
           </div>
+
+          <p className="text-center text-[11px] text-slate-400 pt-1">
+            Status diperbarui secara otomatis setiap 4 detik (Terakhir dicek: {lastRefreshed})
+          </p>
         </div>
       </div>
     </div>
