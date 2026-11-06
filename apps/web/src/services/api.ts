@@ -575,7 +575,10 @@ export const ApiClient = {
         `${API_BASE}/canteens/${canteenId}/qr`
       );
     } catch {
-      const url = `${window.location.origin}/?canteenId=${canteenId}`;
+      const baseUrl =
+        (typeof import.meta !== "undefined" && (import.meta as any).env?.BASE_URL) || "/";
+      const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+      const url = `${window.location.origin}${cleanBase}?canteenId=${canteenId}`;
       return {
         TargetUrl: url,
         QrCodeDataUrl: "",

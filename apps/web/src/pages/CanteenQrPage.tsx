@@ -41,7 +41,9 @@ export const CanteenQrPage: React.FC<CanteenQrPageProps> = ({
     });
   }, [canteen]);
 
-  const orderingUrl = `${window.location.origin}?canteenId=${canteen.Id}`;
+  const baseUrl = (import.meta as any).env?.BASE_URL || "/";
+  const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  const orderingUrl = `${window.location.origin}${cleanBase}?canteenId=${canteen.Id}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(orderingUrl);

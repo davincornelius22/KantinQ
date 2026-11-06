@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<
     if (this.props.onReset) {
       this.props.onReset();
     } else {
-      window.location.href = "/";
+      window.location.href = (import.meta as any).env?.BASE_URL || "/";
     }
   };
 
