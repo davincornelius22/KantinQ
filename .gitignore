@@ -5,4 +5,5 @@ dist/
 *.exe
 *.timestamp-*
 KantinQ/
+temp_video_rec/
 .DS_Store
