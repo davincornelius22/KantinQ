@@ -19,6 +19,7 @@ import {
   History,
   ListOrdered,
 } from "lucide-react";
+import { logger } from "../utils/logger";
 
 interface SellerDashboardPageProps {
   canteenId: number;
@@ -36,7 +37,7 @@ export const SellerDashboardPage: React.FC<SellerDashboardPageProps> = ({ cantee
       const data = await ApiClient.getDashboard(canteenId);
       setDashboard(data);
     } catch (err) {
-      console.error("Gagal mengambil data dashboard:", err);
+      logger.error("Gagal mengambil data dashboard:", err);
     }
   };
 
@@ -45,7 +46,7 @@ export const SellerDashboardPage: React.FC<SellerDashboardPageProps> = ({ cantee
       const hist = await ApiClient.getOrderHistory(canteenId);
       setHistoryOrders(hist);
     } catch (err) {
-      console.error("Gagal mengambil riwayat pesanan:", err);
+      logger.error("Gagal mengambil riwayat pesanan:", err);
     }
   };
 

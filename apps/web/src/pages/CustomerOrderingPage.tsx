@@ -15,6 +15,7 @@ import {
   validateCartAvailability,
   formatRupiah,
 } from "../utils/validation";
+import { logger } from "../utils/logger";
 import {
   MapPin,
   Plus,
@@ -98,6 +99,13 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
 
     try {
       setIsSubmitting(true);
+      logger.info("Memproses checkout pesanan:", {
+        CustomerName: customerName.trim(),
+        canteenId: canteen.Id,
+        itemsCount: cart.length,
+        totalAmount,
+      });
+
       const newOrder = await ApiClient.createOrder(canteen.Id, {
         CustomerName: customerName.trim(),
         Items: cart.map((item) => ({
@@ -106,11 +114,18 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
         })),
       });
 
+      logger.info("Checkout berhasil! Pesanan dibuat:", {
+        orderId: newOrder.Id,
+        queueNumber: newOrder.QueueNumber,
+        CustomerName: newOrder.CustomerName,
+      });
+
       onClearCart();
       setCustomerName("");
       onOrderSuccess(newOrder);
     } catch (err: unknown) {
       const error = err as Error;
+      logger.error("Gagal memproses checkout pesanan:", error);
       setErrorMessage(error.message || "Gagal membuat pesanan. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);

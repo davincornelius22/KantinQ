@@ -3,6 +3,7 @@ import { OrderResponse, OrderStatus } from "@kantinq/shared";
 import { StatusBadge } from "../components/Badge";
 import { ApiClient } from "../services/api";
 import { formatTime } from "../utils/validation";
+import { logger } from "../utils/logger";
 import {
   CheckCircle,
   RefreshCw,
@@ -37,7 +38,7 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
         setLastRefreshed(formatTime(new Date()));
       }
     } catch (err) {
-      console.error("Gagal memperbarui status pesanan:", err);
+      logger.error("Gagal memperbarui status pesanan:", err);
     } finally {
       setIsRefreshing(false);
     }

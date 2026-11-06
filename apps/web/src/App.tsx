@@ -17,6 +17,7 @@ import { MyOrdersPage } from "./pages/MyOrdersPage";
 import { MOCK_MENUS } from "./components/MenuList";
 import { useCart } from "./hooks/useCart";
 import { useOrderHistory } from "./hooks/useOrderHistory";
+import { logger } from "./utils/logger";
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavTab>("order");
@@ -48,7 +49,7 @@ export const App: React.FC = () => {
       const q = await ApiClient.getQueue(canteenId);
       setQueueCondition(q.Condition);
     } catch (err) {
-      console.warn("Backend API tidak terdeteksi, beralih ke mock data KantinQ:", err);
+      logger.warn("Backend API tidak terdeteksi, beralih ke mock data KantinQ:", err);
       setCanteen({
         Id: canteenId,
         Name: "KantinQ Kampus (Demo)",
@@ -74,7 +75,7 @@ export const App: React.FC = () => {
       const m = await ApiClient.getMenu(canteen.Id);
       setMenus(m);
     } catch (err) {
-      console.error("Gagal menyegarkan menu:", err);
+      logger.error("Gagal menyegarkan menu:", err);
     }
   };
 

@@ -3,6 +3,7 @@ import { QueueResponse, OrderStatus } from "@kantinq/shared";
 import { ApiClient } from "../services/api";
 import { QueueConditionBadge, StatusBadge } from "../components/Badge";
 import { Users, Clock, Flame, CheckCircle, RefreshCw } from "lucide-react";
+import { logger } from "../utils/logger";
 
 interface QueueMonitorPageProps {
   canteenId: number;
@@ -17,7 +18,7 @@ export const QueueMonitorPage: React.FC<QueueMonitorPageProps> = ({ canteenId })
       const data = await ApiClient.getQueue(canteenId);
       setQueueData(data);
     } catch (err) {
-      console.error("Gagal mengambil data antrean:", err);
+      logger.error("Gagal mengambil data antrean:", err);
     } finally {
       setLoading(false);
     }
