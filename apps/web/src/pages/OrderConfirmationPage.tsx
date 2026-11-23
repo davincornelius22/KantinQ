@@ -29,11 +29,40 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
     formatTime(new Date())
   );
 
+  const [hasNotifiedReady, setHasNotifiedReady] = useState(false);
+
+  const playNotificationSound = () => {
+    try {
+      if (typeof window !== "undefined" && (window.AudioContext || (window as any).webkitAudioContext)) {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      }
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([200, 100, 200]);
+      }
+    } catch {}
+  };
+
   const handleRefresh = async () => {
     try {
       setIsRefreshing(true);
       const updated = await ApiClient.getOrderById(order.Id);
       if (updated) {
+        if (updated.Status === OrderStatus.READY && order.Status !== OrderStatus.READY && !hasNotifiedReady) {
+          playNotificationSound();
+          setHasNotifiedReady(true);
+        }
         setOrder(updated);
         setLastRefreshed(formatTime(new Date()));
       }
@@ -51,10 +80,17 @@ export const OrderConfirmationPage: React.FC<OrderConfirmationPageProps> = ({
     ) {
       return;
     }
-    const timer = setInterval(() => {
+    let pollCount = 0;
+    // Exponential backoff: starts at 4s, gradually slows down if status hasn't changed to save mobile battery
+    const getInterval = () => (pollCount > 15 ? 10000 : pollCount > 5 ? 6000 : 4000);
+    
+    let timer = setTimeout(function tick() {
+      pollCount++;
       handleRefresh();
+      timer = setTimeout(tick, getInterval());
     }, 4000);
-    return () => clearInterval(timer);
+
+    return () => clearTimeout(timer);
   }, [order.Id, order.Status]);
 
   const formatRupiah = (val: number) => {

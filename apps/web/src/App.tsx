@@ -44,7 +44,9 @@ export const App: React.FC = () => {
       setCanteen(c);
 
       const m = await ApiClient.getMenu(canteenId);
-      setMenus(m && m.length > 0 ? m : MOCK_MENUS);
+      const freshMenus = m && m.length > 0 ? m : MOCK_MENUS;
+      setMenus(freshMenus);
+      cartHook.syncWithMenus(freshMenus);
 
       const q = await ApiClient.getQueue(canteenId);
       setQueueCondition(q.Condition);
@@ -74,6 +76,7 @@ export const App: React.FC = () => {
     try {
       const m = await ApiClient.getMenu(canteen.Id);
       setMenus(m);
+      cartHook.syncWithMenus(m);
     } catch (err) {
       logger.error("Gagal menyegarkan menu:", err);
     }

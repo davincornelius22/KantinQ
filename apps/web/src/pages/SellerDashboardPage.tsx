@@ -256,12 +256,12 @@ export const SellerDashboardPage: React.FC<SellerDashboardPageProps> = ({ cantee
                           </span>
                         </div>
 
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-slate-900 text-base">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                            <span className="font-extrabold text-slate-900 text-base break-words">
                               {order.CustomerName}
                             </span>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-400 shrink-0">
                               • {formatTime(order.CreatedAt)}
                             </span>
                           </div>

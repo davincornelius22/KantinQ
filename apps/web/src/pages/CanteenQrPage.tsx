@@ -41,9 +41,20 @@ export const CanteenQrPage: React.FC<CanteenQrPageProps> = ({
     });
   }, [canteen]);
 
+  const isLocalHost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.startsWith("192.168."));
+
+  const customProductionOrigin =
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_PUBLIC_URL) || "";
+
   const baseUrl = (import.meta as any).env?.BASE_URL || "/";
   const cleanBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-  const orderingUrl = `${window.location.origin}${cleanBase}?canteenId=${canteen.Id}`;
+  const effectiveOrigin =
+    customProductionOrigin || (typeof window !== "undefined" ? window.location.origin : "");
+  const orderingUrl = `${effectiveOrigin}${cleanBase}?canteenId=${canteen.Id}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(orderingUrl);
@@ -72,7 +83,7 @@ export const CanteenQrPage: React.FC<CanteenQrPageProps> = ({
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Top Header */}
-      <div>
+      <div className="print:hidden">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
           QR Code & Profil Stan Kantin
         </h1>
@@ -83,16 +94,16 @@ export const CanteenQrPage: React.FC<CanteenQrPageProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: QR Code Standee Card (Printable) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl text-center space-y-6">
-          <div className="bg-orange-50 border border-orange-200 p-6 rounded-2xl flex flex-col items-center justify-center">
-            <div className="flex items-center gap-2 text-orange-700 font-extrabold text-sm mb-1 uppercase tracking-wider">
+        <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl text-center space-y-6 print:border-none print:shadow-none print:w-full print:p-0">
+          <div className="bg-orange-50 border border-orange-200 p-6 rounded-2xl flex flex-col items-center justify-center print:bg-white print:border-2 print:border-slate-800">
+            <div className="flex items-center gap-2 text-orange-700 font-extrabold text-sm mb-1 uppercase tracking-wider print:text-slate-900">
               <QrCode className="w-5 h-5" />
               <span>Scan Untuk Pesan Makanan</span>
             </div>
             <h2 className="text-xl font-black text-slate-900 mb-4">{canteen.Name}</h2>
 
             {/* QR SVG */}
-            <div className="bg-white p-4 rounded-2xl shadow-md border border-slate-200 inline-block">
+            <div className="bg-white p-4 rounded-2xl shadow-md border border-slate-200 inline-block print:shadow-none">
               <QRCodeSVG
                 value={orderingUrl}
                 size={220}
@@ -101,13 +112,21 @@ export const CanteenQrPage: React.FC<CanteenQrPageProps> = ({
               />
             </div>
 
-            <p className="text-xs text-slate-500 font-medium mt-4">
+            <p className="text-xs text-slate-500 font-medium mt-4 print:text-slate-700">
               KantinQ Kampus • Tanpa Antre, Praktis & Cepat
             </p>
           </div>
 
+          {/* Localhost Warning Banner if printing while on localhost */}
+          {isLocalHost && !customProductionOrigin && (
+            <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 text-left text-xs text-amber-800 print:hidden">
+              <span className="font-bold block mb-0.5">⚠️ Peringatan Hostname Lokal:</span>
+              Dashboard diakses via <code>{window.location.hostname}</code>. QR Code ini hanya dapat dibuka di perangkat yang berada di jaringan yang sama. Saat dideploy ke domain produksi/VPS, URL akan otomatis menyesuaikan domain publik.
+            </div>
+          )}
+
           {/* URL Box */}
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2 text-xs text-left">
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2 text-xs text-left print:hidden">
             <span className="truncate text-slate-600 font-mono">{orderingUrl}</span>
             <button
               type="button"
@@ -129,7 +148,7 @@ export const CanteenQrPage: React.FC<CanteenQrPageProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 print:hidden">
             <button
               type="button"
               onClick={handlePrint}
@@ -151,7 +170,7 @@ export const CanteenQrPage: React.FC<CanteenQrPageProps> = ({
         </div>
 
         {/* Right Column: Canteen Profile Form */}
-        <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+        <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6 print:hidden">
           <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
             <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
               <Store className="w-5 h-5" />

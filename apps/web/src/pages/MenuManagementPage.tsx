@@ -4,6 +4,7 @@ import { ApiClient } from "../services/api";
 import {
   validateMenuName,
   validateMenuPrice,
+  validateMenuDescription,
   formatRupiah,
 } from "../utils/validation";
 import {
@@ -79,6 +80,12 @@ export const MenuManagementPage: React.FC<MenuManagementPageProps> = ({
     const priceCheck = validateMenuPrice(Number(formData.Price));
     if (!priceCheck.valid) {
       setFormError(priceCheck.message);
+      return;
+    }
+
+    const descCheck = validateMenuDescription(formData.Description);
+    if (!descCheck.valid) {
+      setFormError(descCheck.message);
       return;
     }
 

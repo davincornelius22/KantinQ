@@ -5,6 +5,7 @@ import {
   validateCartAvailability,
   validateMenuPrice,
   validateMenuName,
+  validateMenuDescription,
   formatRupiah,
   formatTime,
   formatDate,
@@ -108,6 +109,31 @@ describe("Validation Utilities", () => {
 
     it("should accept valid menu names", () => {
       expect(validateMenuName("Mie Goreng Spesial").valid).toBe(true);
+    });
+  });
+
+  describe("validateMenuDescription", () => {
+    it("should accept empty or undefined description", () => {
+      expect(validateMenuDescription("").valid).toBe(true);
+      expect(validateMenuDescription(undefined).valid).toBe(true);
+      expect(validateMenuDescription(null).valid).toBe(true);
+    });
+
+    it("should reject whitespace-only description", () => {
+      const res = validateMenuDescription("   \t  \n  ");
+      expect(res.valid).toBe(false);
+      expect(res.message).toBe("Deskripsi menu tidak boleh hanya berisi spasi kosong");
+    });
+
+    it("should reject description exceeding 300 characters", () => {
+      const longDesc = "A".repeat(301);
+      const res = validateMenuDescription(longDesc);
+      expect(res.valid).toBe(false);
+      expect(res.message).toBe("Deskripsi menu maksimal 300 karakter");
+    });
+
+    it("should accept valid descriptions", () => {
+      expect(validateMenuDescription("Nasi goreng lezat dengan bumbu rahasia").valid).toBe(true);
     });
   });
 

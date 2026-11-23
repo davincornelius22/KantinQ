@@ -64,6 +64,20 @@ export function validateMenuName(name: string): ValidationResult {
   return { valid: true, message: "" };
 }
 
+export function validateMenuDescription(desc?: string | null): ValidationResult {
+  if (!desc) {
+    return { valid: true, message: "" };
+  }
+  const trimmed = desc.trim();
+  if (desc.length > 0 && trimmed.length === 0) {
+    return { valid: false, message: "Deskripsi menu tidak boleh hanya berisi spasi kosong" };
+  }
+  if (trimmed.length > 300) {
+    return { valid: false, message: "Deskripsi menu maksimal 300 karakter" };
+  }
+  return { valid: true, message: "" };
+}
+
 export function formatRupiah(val: number): string {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",

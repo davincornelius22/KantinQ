@@ -112,11 +112,11 @@ export const QueueMonitorPage: React.FC<QueueMonitorPageProps> = ({ canteenId })
                   key={order.Id}
                   className="bg-white rounded-xl p-4 border border-amber-200/80 shadow-xs flex items-center justify-between"
                 >
-                  <div>
+                  <div className="min-w-0 pr-2">
                     <span className="text-2xl font-black text-slate-900 block tracking-tight">
                       {order.QueueNumber}
                     </span>
-                    <span className="text-xs font-semibold text-slate-600">
+                    <span className="text-xs font-semibold text-slate-600 block truncate max-w-[140px] sm:max-w-[180px]">
                       {order.CustomerName}
                     </span>
                   </div>
@@ -150,11 +150,11 @@ export const QueueMonitorPage: React.FC<QueueMonitorPageProps> = ({ canteenId })
                   key={order.Id}
                   className="bg-white rounded-xl p-4 border border-blue-200 shadow-xs flex items-center justify-between"
                 >
-                  <div>
+                  <div className="min-w-0 pr-2">
                     <span className="text-2xl font-black text-blue-900 block tracking-tight">
                       {order.QueueNumber}
                     </span>
-                    <span className="text-xs font-semibold text-slate-600">
+                    <span className="text-xs font-semibold text-slate-600 block truncate max-w-[140px] sm:max-w-[180px]">
                       {order.CustomerName}
                     </span>
                   </div>
@@ -188,11 +188,11 @@ export const QueueMonitorPage: React.FC<QueueMonitorPageProps> = ({ canteenId })
                   key={order.Id}
                   className="bg-white rounded-xl p-4 border-2 border-emerald-400 shadow-sm flex items-center justify-between ring-2 ring-emerald-100"
                 >
-                  <div>
+                  <div className="min-w-0 pr-2">
                     <span className="text-3xl font-black text-emerald-700 block tracking-tight">
                       {order.QueueNumber}
                     </span>
-                    <span className="text-xs font-bold text-slate-800">
+                    <span className="text-xs font-bold text-slate-800 block truncate max-w-[130px] sm:max-w-[170px]">
                       {order.CustomerName}
                     </span>
                   </div>

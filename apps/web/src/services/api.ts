@@ -12,7 +12,8 @@ import {
   UpdateCanteenDto,
 } from "@kantinq/shared";
 
-const API_BASE = "/api";
+const API_BASE =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_URL) || "/api";
 
 // Fallback initial state jika backend belum dinyalakan saat demo
 const fallbackCanteen: Canteen = {
@@ -419,7 +420,8 @@ export const ApiClient = {
     } catch {
       const orders = getFallbackOrders();
       const menus = getFallbackMenus();
-      const nextNum = orders.length + 1;
+      const maxExistingId = orders.reduce((max, o) => Math.max(max, o.Id), 0);
+      const nextNum = Math.max(orders.length + 1, maxExistingId + 1);
       const queueNumber = `A-${String(nextNum).padStart(3, "0")}`;
 
       const items = dto.Items.map((item, idx) => {

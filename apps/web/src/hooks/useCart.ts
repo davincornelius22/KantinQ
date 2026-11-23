@@ -9,11 +9,27 @@ export interface CartItem {
 
 const CART_STORAGE_KEY = "kantinq_cart";
 
-export function useCart(canteenId: number) {
+export function useCart(canteenId: number, latestMenus?: MenuItem[]) {
   const [cart, setCart] = useLocalStorage<CartItem[]>(
     `${CART_STORAGE_KEY}_${canteenId}`,
     []
   );
+
+  // Synchronize cart items with latest menu availability/price changes from server/live state
+  const syncWithMenus = useCallback((freshMenus: MenuItem[]) => {
+    setCart((prev) =>
+      prev.map((item) => {
+        const fresh = freshMenus.find((m) => m.Id === item.menu.Id);
+        if (fresh) {
+          return {
+            ...item,
+            menu: fresh,
+          };
+        }
+        return item;
+      })
+    );
+  }, [setCart]);
 
   const addToCart = useCallback((menu: MenuItem) => {
     if (!menu.IsAvailable) return;
@@ -77,6 +93,7 @@ export function useCart(canteenId: number) {
     updateQuantity,
     removeFromCart,
     clearCart,
+    syncWithMenus,
     totalAmount,
     totalItemsCount,
     cartQuantities,
