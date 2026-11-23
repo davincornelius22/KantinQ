@@ -1,0 +1,61 @@
+================================================================================
+KantinQ (P10) - Post-Deployment Bug Fix & Verification Results
+Date/Time: 2026-11-23 16:06:30 +07:00
+Environment: Node.js, Vitest v2.1.9, TypeScript 5.6.3, Vite 5.4.21
+================================================================================
+
+1. TEST SUITE EXECUTION (npm test)
+--------------------------------------------------------------------------------
+Command: vitest run
+Working Directory: apps/web
+
+ Test Files  7 passed (7)
+      Tests  69 passed (69)
+   Duration  22.07s
+
+Breakdown:
+ ✓ src/test/logger.test.ts (16 tests)
+ ✓ src/test/useCart.test.ts (8 tests)
+ ✓ src/test/validation.test.ts (21 tests) [includes validateMenuDescription edge cases]
+ ✓ src/test/api.test.ts (6 tests)
+ ✓ src/test/errorBoundary.test.tsx (3 tests)
+ ✓ src/test/components.test.tsx (10 tests)
+ ✓ src/test/useOrderHistory.test.ts (5 tests)
+
+Result: 100% UNIT TESTS PASSED (69/69)
+
+--------------------------------------------------------------------------------
+2. PRODUCTION BUILD VERIFICATION (npm run build:web)
+--------------------------------------------------------------------------------
+Command: tsc && vite build
+Output:
+vite v5.4.21 building for production...
+transforming...
+✓ 1599 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.58 kB │ gzip:  0.83 kB
+dist/assets/index-CVEIzYyH.css   32.50 kB │ gzip:  6.11 kB
+dist/assets/index-B4zuw4nr.js   257.60 kB │ gzip: 74.90 kB
+✓ built in 25.78s
+
+Result: PRODUCTION BUILD SUCCESSFUL (0 ERRORS, 0 WARNINGS)
+
+--------------------------------------------------------------------------------
+3. RESOLVED GITHUB ISSUES
+--------------------------------------------------------------------------------
+- Fixes #1: [Bug] api.ts hardcodes localhost fallback or lacks proper API base configuration
+- Fixes #2: [Bug] Missing SPA client-side routing fallback redirects configuration (_redirects / vercel.json)
+- Fixes #3: [Bug] CanteenQrPage.tsx print layout does not hide navigation bar and action buttons (@media print)
+- Fixes #4: [Bug] CanteenQrPage generates localhost URL when accessed locally or via tunnel
+- Fixes #5: [Bug] OrderConfirmationPage polling lifecycle keeps polling indefinitely
+- Fixes #6: [Bug] Horizontal overflow and layout breaking on narrow mobile viewports (360px)
+- Fixes #7: [Bug] Cart items in useCart.ts do not synchronize with real-time menu availability
+- Fixes #8: [Bug] MenuManagementPage description accepts whitespace-only strings
+- Fixes #9: [Bug] Queue number generator in mock api.ts can generate duplicate queue numbers
+- Fixes #10: [Bug] Subpath deployment asset 404 and base URL misalignment
+- Fixes #11: [Bug] Missing physical favicon.ico file causes 404 error
+- Fixes #12: [Bug] OrderConfirmationPage lacks sound or notification when order reaches READY
+
+Status: ALL 12 ISSUES RESOLVED, COMMITTED, AND MERGED TO MAIN
+================================================================================
