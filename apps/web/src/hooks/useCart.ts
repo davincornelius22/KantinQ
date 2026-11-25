@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { MenuItem } from "@kantinq/shared";
 import { useLocalStorage } from "./useLocalStorage";
+import { MAX_ITEM_QUANTITY } from "../utils/validation";
 
 export interface CartItem {
   menu: MenuItem;
@@ -38,7 +39,7 @@ export function useCart(canteenId: number, latestMenus?: MenuItem[]) {
       if (existing) {
         return prev.map((item) =>
           item.menu.Id === menu.Id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: Math.min(item.quantity + 1, MAX_ITEM_QUANTITY) }
             : item
         );
       }
@@ -51,7 +52,7 @@ export function useCart(canteenId: number, latestMenus?: MenuItem[]) {
       return prev
         .map((item) => {
           if (item.menu.Id === menuId) {
-            const nextQty = item.quantity + delta;
+            const nextQty = Math.min(item.quantity + delta, MAX_ITEM_QUANTITY);
             return nextQty > 0 ? { ...item, quantity: nextQty } : null;
           }
           return item;

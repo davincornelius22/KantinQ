@@ -1,6 +1,49 @@
+export const MAX_ORDER_NOTE_LENGTH = 100;
+export const MAX_ITEM_QUANTITY = 20;
+
 export interface ValidationResult {
   valid: boolean;
   message: string;
+}
+
+/**
+ * Strips HTML tags and angle brackets from an order note and trims whitespace.
+ */
+export function sanitizeOrderNote(note: string): string {
+  return note.replace(/<[^>]*>/g, "").replace(/[<>]/g, "").trim();
+}
+
+/**
+ * Validates an optional order note after HTML sanitization (max 100 chars).
+ */
+export function validateOrderNote(note?: string | null): ValidationResult {
+  if (!note) {
+    return { valid: true, message: "" };
+  }
+  const sanitized = sanitizeOrderNote(note);
+  if (sanitized.length > MAX_ORDER_NOTE_LENGTH) {
+    return {
+      valid: false,
+      message: `Catatan pesanan maksimal ${MAX_ORDER_NOTE_LENGTH} karakter`,
+    };
+  }
+  return { valid: true, message: "" };
+}
+
+/**
+ * Validates per-item portion quantity (1 to 20 portions).
+ */
+export function validateItemQuantity(quantity: number): ValidationResult {
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    return { valid: false, message: "Jumlah porsi minimal 1" };
+  }
+  if (quantity > MAX_ITEM_QUANTITY) {
+    return {
+      valid: false,
+      message: `Maksimal ${MAX_ITEM_QUANTITY} porsi per menu`,
+    };
+  }
+  return { valid: true, message: "" };
 }
 
 export function validateCustomerName(name: string): ValidationResult {

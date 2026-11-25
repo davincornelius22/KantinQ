@@ -13,6 +13,11 @@ import {
   validateCustomerName,
   validateCartNotEmpty,
   validateCartAvailability,
+  validateOrderNote,
+  validateItemQuantity,
+  sanitizeOrderNote,
+  MAX_ORDER_NOTE_LENGTH,
+  MAX_ITEM_QUANTITY,
   formatRupiah,
 } from "../utils/validation";
 import { logger } from "../utils/logger";
@@ -60,11 +65,13 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
   onClearCart,
 }) => {
   const [customerName, setCustomerName] = useState("");
+  const [orderNote, setOrderNote] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<MenuCategory>("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [noteError, setNoteError] = useState<string | null>(null);
 
   const handleNameChange = (value: string) => {
     setCustomerName(value);
@@ -74,14 +81,27 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
     }
   };
 
+  const handleOrderNoteChange = (value: string) => {
+    setOrderNote(value);
+    const result = validateOrderNote(value);
+    setNoteError(result.valid ? null : result.message);
+  };
+
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setNameError(null);
+    setNoteError(null);
 
     const nameValidation = validateCustomerName(customerName);
     if (!nameValidation.valid) {
       setNameError(nameValidation.message);
+      return;
+    }
+
+    const noteValidation = validateOrderNote(orderNote);
+    if (!noteValidation.valid) {
+      setNoteError(noteValidation.message);
       return;
     }
 
@@ -97,10 +117,21 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
       return;
     }
 
+    for (const item of cart) {
+      const qtyValidation = validateItemQuantity(item.quantity);
+      if (!qtyValidation.valid) {
+        setErrorMessage(`${item.menu.Name}: ${qtyValidation.message}`);
+        return;
+      }
+    }
+
+    const sanitizedNote = sanitizeOrderNote(orderNote);
+
     try {
       setIsSubmitting(true);
       logger.info("Memproses checkout pesanan:", {
         CustomerName: customerName.trim(),
+        orderNote: sanitizedNote || undefined,
         canteenId: canteen.Id,
         itemsCount: cart.length,
         totalAmount,
@@ -122,6 +153,7 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
 
       onClearCart();
       setCustomerName("");
+      setOrderNote("");
       onOrderSuccess(newOrder);
     } catch (err: unknown) {
       const error = err as Error;
@@ -345,7 +377,9 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
                       <button
                         type="button"
                         onClick={() => onUpdateQuantity(item.menu.Id, 1)}
-                        className="w-6 h-6 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer"
+                        disabled={item.quantity >= MAX_ITEM_QUANTITY}
+                        aria-label={`Tambah ${item.menu.Name}`}
+                        className="w-6 h-6 rounded flex items-center justify-center bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -396,6 +430,38 @@ export const CustomerOrderingPage: React.FC<CustomerOrderingPageProps> = ({
                   <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     {nameError}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label
+                    htmlFor="order-note"
+                    className="block text-xs font-bold text-slate-700"
+                  >
+                    Catatan Pesanan (Opsional)
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    {sanitizeOrderNote(orderNote).length}/{MAX_ORDER_NOTE_LENGTH}
+                  </span>
+                </div>
+                <textarea
+                  id="order-note"
+                  rows={2}
+                  placeholder="Contoh: Tidak pedas, tanpa bawang, kuah dipisah"
+                  value={orderNote}
+                  onChange={(e) => handleOrderNoteChange(e.target.value)}
+                  className={`w-full px-3.5 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none ${
+                    noteError
+                      ? "border-rose-400 bg-rose-50/30"
+                      : "border-slate-300"
+                  }`}
+                />
+                {noteError && (
+                  <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {noteError}
                   </p>
                 )}
               </div>
