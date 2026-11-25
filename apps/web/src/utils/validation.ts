@@ -37,8 +37,7 @@ export function validateItemQuantity(quantity: number): ValidationResult {
   if (!Number.isInteger(quantity) || quantity < 1) {
     return { valid: false, message: "Jumlah porsi minimal 1" };
   }
-  // Deliberate bug for P11 Phase 2 CI failure simulation (should be MAX_ITEM_QUANTITY)
-  if (quantity > 999) {
+  if (quantity > MAX_ITEM_QUANTITY) {
     return {
       valid: false,
       message: `Maksimal ${MAX_ITEM_QUANTITY} porsi per menu`,
